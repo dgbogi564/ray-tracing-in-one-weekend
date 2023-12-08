@@ -1,7 +1,9 @@
-use std::fs;
+use std::{fs, io};
+use std::io::Write;
+use crate::vec3::Color;
 
 pub fn create() {
-    let mut contents = String::with_capacity(800_000);
+    let mut contents = String::with_capacity(1_000_000);
 
     // Image
 
@@ -15,16 +17,15 @@ pub fn create() {
     contents.push_str("255\n");
 
     for j in 0..image_height {
+        print!("\rScanlines remaining: {} ", image_height - j);
+        io::stdout().flush().unwrap();
         for i in 0..image_width {
-            let r = f64::from(i) / f64::from(image_width - 1);
-            let g = f64::from(j) / f64::from(image_height - 1);
-            let b = 0.0;
-
-            let ir     = (255.999 * r).floor() as i32;
-            let ig  = (255.999 * g).floor() as i32;
-            let ib  = (255.999 * b) as i32;
-
-            contents.push_str(&format!("{ir} {ig} {ib}\n"));
+            let pixel_color = Color::new(
+                i as f64 / (image_width as f64 - 1.0),
+                j as f64 / (image_height as f64 - 1.0),
+                0.0,
+            );
+            contents.push_str(&format!("{pixel_color}\n"));
         }
     }
 
