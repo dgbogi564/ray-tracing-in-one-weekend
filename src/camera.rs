@@ -53,7 +53,7 @@ pub fn render() {
     //
     // Unlike our image, the viewport can be any real number rather than just an integer.
     let viewport_height = 2.0;
-    let viewport_width = (viewport_height * (image_width as f64 / image_height as f64)).floor();
+    let viewport_width = viewport_height * (image_width as f64 / image_height as f64);
 
     // Point in 3D space from which all scene rays will originate
     // (commonly referred to as the eye point).
