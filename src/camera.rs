@@ -1,28 +1,29 @@
 use std::cmp::max;
 use std::{fs, io};
 use std::io::Write;
+use std::path::Path;
 use crate::ray::Ray;
-use crate::vec3::{Color, Point3, Vec3};
+use crate::vec3::{Color, norm, Point3, Vec3};
+
+/// Simple gradient via linear interpolation
+/// blended value = (1-a) * white + a * blue
+///
+/// We add 1 to unit direction y to scale from 0 to 2 and divide by 2 to scale from 0 to 1.
+///
+/// Scaling the ray direction to unit length (normalization), this function linearly blends
+/// white and blue depending on the height of the y coordinate (so -1.0 < y < 1.0).
+///
+/// Because we're looking at the height of y after normalization (y os dependent on x and z in
+/// normalization), there will be a horizontal gradient in addition the vertical gradient.
+pub(crate) fn ray_color(r: &Ray) -> Color {
+    let unit_direction = norm(r.direction);
+    let a = 0.5 * (unit_direction.y + 1.0);
+    return (1.0 - a) * Color::new(1.0, 1.0, 1.0) + a * Color::new(0.5, 0.7, 1.0);
+}
 
 /// https://raytracing.github.io/books/RayTracingInOneWeekend.html#rays,asimplecamera,andbackground
-pub fn render() {
+pub(crate) fn render(ray_color: fn(&Ray) -> Color, file_path: &str) {
     let mut contents = String::with_capacity(2_000_000);
-
-    /// Simple gradient via linear interpolation
-    /// blended value = (1-a) * white + a * blue
-    ///
-    /// We add 1 to unit direction y to scale from 0 to 2 and divide by 2 to scale from 0 to 1.
-    ///
-    /// Scaling the ray direction to unit length (normalization), this function linearly blends
-    /// white and blue depending on the height of the y coordinate (so -1.0 < y < 1.0).
-    ///
-    /// Because we're looking at the height of y after normalization (y os dependent on x and z in
-    /// normalization), there will be a horizontal gradient in addition the vertical gradient.
-    fn ray_color(r: &Ray) -> Color {
-        let unit_direction = r.direction.unit_vector();
-        let a = 0.5 * (unit_direction.y() + 1.0);
-        return (1.0 - a) * Color::new(1.0, 1.0, 1.0) + a * Color::new(0.5, 0.7, 1.0);
-    }
 
     // Image
 
@@ -113,8 +114,9 @@ pub fn render() {
         }
     }
 
-    fs::create_dir_all("out").expect("Unable to create directory");
-    fs::write("out/ray_color.ppm", contents).expect("Unable to write file");
+    let directory = Path::new(&file_path).parent().unwrap().to_str().unwrap();
+    fs::create_dir_all(directory).expect("Unable to create directory");
+    fs::write(file_path, contents).expect("Unable to write file");
 
     print!("\rDone.                 \n");
 }

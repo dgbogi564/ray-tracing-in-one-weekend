@@ -1,67 +1,60 @@
-use num_traits::{Float, PrimInt};
-
 #[derive(Clone, Copy, Debug)]
-pub struct Vec3 {
+pub(crate) struct Vec3 {
     e: [f64; 3],
+    pub(crate) x: f64,
+    pub(crate) y: f64,
+    pub(crate) z: f64,
 }
-pub type Color = Vec3;
-pub type Point3 = Vec3;
+
+pub(crate) type Color = Vec3;
+pub(crate) type Point3 = Vec3;
 
 
 /// https://raytracing.github.io/books/RayTracingInOneWeekend.html#thevec3class
 impl Vec3 {
-    pub fn new(e1: f64, e2: f64, e3: f64) -> Self {
-        Self { e: [e1, e2, e3] }
+    pub(crate) fn new(e1: f64, e2: f64, e3: f64) -> Self {
+        Self { e: [e1, e2, e3], x: e1, y: e2, z: e3 }
     }
 
-    pub fn default() -> Self {
-        Self { e: [0.0, 0.0, 0.0] }
+    pub(crate) fn default() -> Self {
+        Self { e: [0.0, 0.0, 0.0], x: 0.0, y: 0.0, z: 0.0 }
     }
 
-    pub fn x(&self) -> f64 {
-        self[0]
-    }
-
-    pub fn y(&self) -> f64 {
-        self[1]
-    }
-
-    pub fn z(&self) -> f64 {
-        self[2]
-    }
-
-    pub fn length(&self) -> f64 {
+    pub(crate) fn length(&self) -> f64 {
         f64::sqrt(self.length_squared())
     }
 
-    pub fn length_squared(&self) -> f64 {
+    pub(crate) fn length_squared(&self) -> f64 {
         return self[0] * self[0]
              + self[1] * self[1]
              + self[2] * self[2];
-    }
-
-    pub fn dot(&self, rhs: Self) -> f64 {
-        return self[0] * rhs[0]
-             + self[1] * rhs[1]
-             + self[2] * rhs[2];
-    }
-
-    pub fn cross(&self, rhs: Self) -> Self {
-        Self::new(self[1] * rhs[2] - self[2] - rhs[1],
-                  self[2] * rhs[0] - self[0] * rhs[2],
-                  self[0] * rhs[1] - self[1] * rhs[0])
-    }
-
-    pub fn unit_vector(&self) -> Self {
-        let length = self.length();
-        Self::new(self[0] / length,
-                  self[1] / length,
-                  self[2] / length)
     }
 }
 
 
 // Utility functions
+
+pub(crate) fn norm(v: Vec3) -> Vec3 {
+    let length = v.length();
+    Vec3::new(v[0] / length,
+              v[1] / length,
+              v[2] / length)
+}
+
+pub(crate) fn dot(lhs: Vec3, rhs: Vec3) -> f64 {
+    return lhs[0] * rhs[0]
+        + lhs[1] * rhs[1]
+        + lhs[2] * rhs[2];
+}
+
+pub(crate) fn cross(lhs: Vec3, rhs: Vec3) -> Vec3 {
+    Vec3::new(lhs[1] * rhs[2] - lhs[2] - rhs[1],
+              lhs[2] * rhs[0] - lhs[0] * rhs[2],
+              lhs[0] * rhs[1] - lhs[1] * rhs[0])
+}
+
+
+// Implementations
 
 impl std::ops::Index<usize> for Vec3 {
     type Output = f64;

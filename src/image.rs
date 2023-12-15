@@ -2,7 +2,7 @@ use std::{fs, io};
 use std::io::Write;
 use crate::vec3::Color;
 
-pub fn create() {
+pub(crate) fn create() {
     let mut contents = String::with_capacity(1_000_000);
 
     // Image
