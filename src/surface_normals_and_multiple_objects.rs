@@ -21,15 +21,29 @@
 // Assume the closest hit point (smallest t) is the one we want.
 
 use crate::ray::Ray;
-use crate::vec3::{Color, dot, norm, Point3, Vec3};
+use crate::vec3::{Color, dot, norm, Point3};
 
 fn hit_sphere(center: Point3, radius: f64, r: &Ray) -> f64 {
     let delta = r.origin - center;
-    let a = dot(r.direction, r.direction);
-    let b = 2.0 * dot(delta, r.direction);
-    let c = dot(delta, delta) - radius * radius;
-    let discriminant = b * b - 4.0 * a * c;
-    if discriminant < 0.0 { -1.0 } else { -b - f64::sqrt(discriminant) / (2.0 * a) }
+    // before: let a = dot(r.direction, r.direction);
+    // vector dotted with itself is equal to the squared length of that vector.
+    let a = r.direction.length_squared();
+
+    // before: let b = 2.0 * dot(delta, r.direction);
+    // Let h be the dot product such that:
+    //     b = 2 * h
+    // Since b is a multiplied by 2, the
+    //     b^2 = 4h^2
+    // If you factor out 4 from b^2 and 4ac, you can simplify the numerator of the equation to:
+    //     -2h ± 2 * sqrt(h^2 - ac).
+    // The denominator is 2a, so you can further simplify the full equation  to:
+    //     -h ± * sqrt(h^2 - ac)/a
+    let half_b = dot(delta, r.direction);
+
+    // before: let c = dot(delta, delta) - radius * radius;
+    let c = delta.length_squared() - radius * radius;
+    let discriminant = half_b * half_b - a * c;
+    if discriminant < 0.0 { -1.0 } else { -half_b - f64::sqrt(discriminant) / a }
 }
 
 pub(crate) fn ray_color(r: &Ray) -> Color {
