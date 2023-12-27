@@ -8,10 +8,14 @@ pub(crate) struct Sphere {
     radius: f64,
 }
 
-impl Hittable for Sphere {
-    fn new(center: Point3, radius: f64) -> Sphere {
+impl Sphere {
+    pub(crate) fn new(center: Point3, radius: f64) -> Sphere {
         Sphere { center, radius }
     }
+}
+
+impl Hittable for Sphere {
+
 
     fn default() -> Self {
         Sphere {

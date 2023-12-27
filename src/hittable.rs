@@ -52,7 +52,6 @@ impl HitRecord {
 }
 
 pub(crate) trait Hittable {
-    fn new(center: Point3, radius: f64) -> Self where Self : Sized;
     fn default() -> Self where Self : Sized;
     fn hit(&self, r: &Ray, ray_t : Interval, rec: &mut HitRecord) -> bool;
 }
@@ -65,12 +64,17 @@ impl HittableList {
     pub(crate) fn new() -> HittableList {
         HittableList { objects: Vec::new() }
     }
-
     pub(crate) fn add(&mut self, object: Rc<dyn Hittable>) {
         self.objects.push(object);
     }
+}
+impl Hittable for HittableList {
 
-    pub(crate) fn hit(&self, r: &Ray, ray_t : Interval, rec: &mut HitRecord) -> bool {
+    fn default() -> Self where Self: Sized {
+        HittableList { objects: Vec::new() }
+    }
+
+    fn hit(&self, r: &Ray, ray_t : Interval, rec: &mut HitRecord) -> bool {
         let mut hit_anything = false;
         let mut closest_so_far = ray_t.max;
 
