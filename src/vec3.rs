@@ -26,15 +26,15 @@ impl Vec3 {
 
     pub(crate) fn length_squared(&self) -> f64 {
         return self[0] * self[0]
-             + self[1] * self[1]
-             + self[2] * self[2];
+            + self[1] * self[1]
+            + self[2] * self[2];
     }
 }
 
 
 // Utility functions
 
-pub(crate) fn norm(v: Vec3) -> Vec3 {
+pub(crate) fn unit_vector(v: Vec3) -> Vec3 {
     let length = v.length();
     Vec3::new(v[0] / length,
               v[1] / length,
@@ -67,6 +67,15 @@ impl std::ops::Index<usize> for Vec3 {
 impl std::ops::IndexMut<usize> for Vec3 {
     fn index_mut(&mut self, index: usize) -> &mut Self::Output {
         &mut self.e[index]
+    }
+}
+
+impl std::ops::Neg for Vec3 {
+    type Output = Self;
+    fn neg(self) -> Self::Output {
+        Self::new(-self[0],
+                  -self[1],
+                  -self[2])
     }
 }
 
@@ -167,7 +176,7 @@ macro_rules! impl_ops {
         impl std::ops::Div<$type> for Vec3 {
             type Output = Self;
             fn div(self, rhs: $type) -> Self {
-                 Self::new(self[0] / rhs as f64,
+                Self::new(self[0] / rhs as f64,
                           self[1] / rhs as f64,
                           self[2] / rhs as f64)
             }

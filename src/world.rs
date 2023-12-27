@@ -2,27 +2,24 @@ use std::cmp::max;
 use std::{fs, io};
 use std::io::Write;
 use std::path::Path;
+use std::rc::Rc;
+use crate::hittable::{HitRecord, Hittable, HittableList};
 use crate::ray::Ray;
+use crate::sphere::Sphere;
 use crate::vec3::{Color, unit_vector, Point3, Vec3};
 
-/// Simple gradient via linear interpolation
-/// blended value = (1-a) * white + a * blue
-///
-/// We add 1 to unit direction y to scale from 0 to 2 and divide by 2 to scale from 0 to 1.
-///
-/// Scaling the ray direction to unit length (normalization), this function linearly blends
-/// white and blue depending on the height of the y coordinate (so -1.0 < y < 1.0).
-///
-/// Because we're looking at the height of y after normalization (y os dependent on x and z in
-/// normalization), there will be a horizontal gradient in addition the vertical gradient.
-pub(crate) fn ray_color(r: &Ray) -> Color {
+pub(crate) fn ray_color(r: &Ray, world: &HittableList) -> Color {
+    let mut rec = HitRecord::default();
+    if world.hit(r, 0.0, f64::INFINITY, &mut rec) {
+        return 0.5 * (rec.normal.unwrap() + Color::new(1.0, 1.0, 1.0));
+    }
+
     let unit_direction = unit_vector(r.direction);
-    let a = 0.5 * (unit_direction.y + 1.0);
-    return (1.0 - a) * Color::new(1.0, 1.0, 1.0) + a * Color::new(0.5, 0.7, 1.0);
+    let a = 0.5*(unit_direction.y + 1.0);
+    return (1.0 - a) * Color::new(1.0, 1.0, 1.0) + a * Color::new(0.6, 0.7, 1.0)
 }
 
-/// https://raytracing.github.io/books/RayTracingInOneWeekend.html#rays,asimplecamera,andbackground
-pub(crate) fn render(ray_color: fn(&Ray) -> Color, file_path: &str) {
+pub(crate) fn render(file_path: &str) {
     let mut contents = String::with_capacity(2_000_000);
 
     // Image
@@ -32,6 +29,11 @@ pub(crate) fn render(ray_color: fn(&Ray) -> Color, file_path: &str) {
 
     // Calculate image height, ensuring that it's at least 1.
     let image_height: i32 = max((image_width as f64 / aspect_ratio).floor() as i32, 1);
+
+    // World
+    let mut world = HittableList::new();
+    world.add(Rc::new(Sphere::new(Point3::new(0.0, 0.0, -1.0), 0.5)));
+    world.add(Rc::new(Sphere::new(Point3::new(0.0, -100.5, -1.0), 100.0)));
 
     // Camera
 
@@ -109,7 +111,7 @@ pub(crate) fn render(ray_color: fn(&Ray) -> Color, file_path: &str) {
             let ray_direction = pixel_center - camera_center;
             let r = Ray::new(camera_center, ray_direction);
 
-            let pixel_color = ray_color(&r);
+            let pixel_color = ray_color(&r, &world);
             contents.push_str(&format!("{pixel_color}\n"));
         }
     }

@@ -1,5 +1,5 @@
 use crate::ray::Ray;
-use crate::vec3::{Color, dot, norm, Point3};
+use crate::vec3::{Color, dot, unit_vector, Point3};
 
 // https://raytracing.github.io/books/RayTracingInOneWeekend.html#addingasphere
 // The formula for the radius of sphere at the origin of a 3D space is x^2 + y^2 + z^2 = r^2.
@@ -52,7 +52,7 @@ pub(crate) fn ray_color(r: &Ray) -> Color {
         return Color::new(1.0, 0.0, 0.0);
     }
 
-    let unit_direction = norm(r.direction);
+    let unit_direction = unit_vector(r.direction);
     let a = 0.5 * (unit_direction.y + 1.0);
     (1.0 - a) * Color::new(1.0, 1.0, 1.0) + a * Color::new(0.6, 0.7, 1.0)
 }
