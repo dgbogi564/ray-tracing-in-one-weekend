@@ -1,4 +1,5 @@
 use crate::hittable::{HitRecord, Hittable};
+use crate::interval::Interval;
 use crate::ray::Ray;
 use crate::vec3::{dot, Point3};
 
@@ -26,7 +27,7 @@ impl Hittable for Sphere {
     /// Design question: should be compute the normals if we hit something?
     /// No, we may hit something closer to the origin, so we don't have to render it.
     /// Regardless, we'll start with a simple solution.
-    fn hit(&self, r: &Ray, ray_tmin: f64, ray_tmax: f64, rec: &mut HitRecord) -> bool {
+    fn hit(&self, r: &Ray, ray_t : Interval, rec: &mut HitRecord) -> bool {
         let delta = r.origin - self.center;
         let a = r.direction.length_squared();
         let half_b = dot(delta, r.direction);
@@ -40,9 +41,9 @@ impl Hittable for Sphere {
         let sqrtd = f64::sqrt(discriminant);
 
         let mut root = (-half_b - sqrtd) / a;
-        if root <= ray_tmin || ray_tmax <= root {
+        if !ray_t.surrounds(root) {
             root = (-half_b + sqrtd) / a;
-            if root <= ray_tmin || ray_tmax <= root {
+            if !ray_t.surrounds(root) {
                 return false;
             }
         }

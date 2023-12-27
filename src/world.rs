@@ -4,13 +4,14 @@ use std::io::Write;
 use std::path::Path;
 use std::rc::Rc;
 use crate::hittable::{HitRecord, Hittable, HittableList};
+use crate::interval::Interval;
 use crate::ray::Ray;
 use crate::sphere::Sphere;
 use crate::vec3::{Color, unit_vector, Point3, Vec3};
 
 pub(crate) fn ray_color(r: &Ray, world: &HittableList) -> Color {
     let mut rec = HitRecord::default();
-    if world.hit(r, 0.0, f64::INFINITY, &mut rec) {
+    if world.hit(r, Interval::new(0.0, f64::INFINITY), &mut rec) {
         return 0.5 * (rec.normal.unwrap() + Color::new(1.0, 1.0, 1.0));
     }
 

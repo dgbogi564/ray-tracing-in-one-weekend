@@ -8,6 +8,7 @@ mod hittable;
 mod sphere;
 mod utils;
 mod world;
+mod interval;
 
 fn main() {
     // https://raytracing.github.io/books/RayTracingInOneWeekend.html#outputanimage
