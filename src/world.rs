@@ -17,7 +17,8 @@ pub(crate) fn ray_color(r: &Ray, world: &dyn Hittable) -> Color {
 
     let unit_direction = unit_vector(r.direction);
     let a = 0.5*(unit_direction.y + 1.0);
-    return (1.0 - a) * Color::new(1.0, 1.0, 1.0) + a * Color::new(0.6, 0.7, 1.0)
+
+    (1.0 - a) * Color::new(1.0, 1.0, 1.0) + a * Color::new(0.6, 0.7, 1.0)
 }
 
 pub(crate) fn render(file_path: &str) {

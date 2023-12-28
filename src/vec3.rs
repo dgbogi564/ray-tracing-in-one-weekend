@@ -1,6 +1,5 @@
 #[derive(Clone, Copy, Debug)]
 pub(crate) struct Vec3 {
-    e: [f64; 3],
     pub(crate) x: f64,
     pub(crate) y: f64,
     pub(crate) z: f64,
@@ -9,25 +8,20 @@ pub(crate) struct Vec3 {
 pub(crate) type Color = Vec3;
 pub(crate) type Point3 = Vec3;
 
-
-/// https://raytracing.github.io/books/RayTracingInOneWeekend.html#thevec3class
 impl Vec3 {
-    pub(crate) fn new(e1: f64, e2: f64, e3: f64) -> Self {
-        Self { e: [e1, e2, e3], x: e1, y: e2, z: e3 }
+    pub(crate) fn new(x: f64, y: f64, z: f64) -> Self {
+        Self { x, y, z }
     }
 
     pub(crate) fn default() -> Self {
-        Self { e: [0.0, 0.0, 0.0], x: 0.0, y: 0.0, z: 0.0 }
+        Self { x: 0.0, y: 0.0, z: 0.0 }
     }
-
     pub(crate) fn length(&self) -> f64 {
         f64::sqrt(self.length_squared())
     }
 
     pub(crate) fn length_squared(&self) -> f64 {
-        return self[0] * self[0]
-            + self[1] * self[1]
-            + self[2] * self[2];
+        self[0].powi(2) + self[1].powi(2) + self[2].powi(2)
     }
 }
 
@@ -42,9 +36,7 @@ pub(crate) fn unit_vector(v: Vec3) -> Vec3 {
 }
 
 pub(crate) fn dot(lhs: Vec3, rhs: Vec3) -> f64 {
-    return lhs[0] * rhs[0]
-        + lhs[1] * rhs[1]
-        + lhs[2] * rhs[2];
+    lhs[0] * rhs[0] + lhs[1] * rhs[1] + lhs[2] * rhs[2]
 }
 
 pub(crate) fn cross(lhs: Vec3, rhs: Vec3) -> Vec3 {
@@ -60,13 +52,23 @@ impl std::ops::Index<usize> for Vec3 {
     type Output = f64;
 
     fn index(&self, index: usize) -> &Self::Output {
-        &self.e[index]
+        match index {
+            0 => &self.x,
+            1 => &self.y,
+            2 => &self.z,
+            _ => panic!("index out of bounds: the length is 3 but the index is {index}"),
+        }
     }
 }
 
 impl std::ops::IndexMut<usize> for Vec3 {
     fn index_mut(&mut self, index: usize) -> &mut Self::Output {
-        &mut self.e[index]
+        match index {
+            0 => &mut self.x,
+            1 => &mut self.y,
+            2 => &mut self.z,
+            _ => panic!("index out of bounds: the length is 3 but the index is {index}"),
+        }
     }
 }
 
