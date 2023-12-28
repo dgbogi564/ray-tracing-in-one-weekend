@@ -19,6 +19,10 @@ impl Interval {
     pub(crate) fn surrounds(&self, x: f64) -> bool {
         self.min < x && x < self.max
     }
+
+    pub(crate) fn clamp(&self, x: f64) -> f64 {
+        f64::max(f64::min(x, self.max), self.min)
+    }
 }
 
 pub const EMPTY: Interval = Interval { min: f64::INFINITY, max: f64::NEG_INFINITY };
