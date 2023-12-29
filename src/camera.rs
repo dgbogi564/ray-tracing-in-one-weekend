@@ -11,7 +11,8 @@ use crate::vec3::{Color, Point3, random_on_hemisphere, unit_vector, Vec3};
 pub(crate) struct Camera {
     image_width: i32,
     aspect_ratio: f64,
-    samples_per_pixel: i32,
+    pub(crate) samples_per_pixel: i32,
+    pub(crate) max_depth: i32,
     image_height: i32,
     center: Point3,
     pixel00_loc: Point3,
@@ -20,7 +21,8 @@ pub(crate) struct Camera {
 }
 
 impl Camera {
-    pub(crate) fn new(image_width: i32, aspect_ratio: f64, samples_per_pixel: i32) -> Self {
+    pub(crate) fn new(image_width: i32, aspect_ratio: f64, samples_per_pixel: i32, max_depth: i32)
+        -> Self {
         let image_height: i32 = max((image_width as f64 / aspect_ratio).floor() as i32, 1);
 
         let focal_length = 1.0;
@@ -47,6 +49,7 @@ impl Camera {
             image_width,
             aspect_ratio,
             samples_per_pixel,
+            max_depth,
             image_height,
             center,
             pixel00_loc,
@@ -56,7 +59,7 @@ impl Camera {
     }
 
     pub(crate) fn render(&self, world: &dyn Hittable, file_path: &str, anti_aliasing: bool,
-                         ray_color: fn(&Ray, &dyn Hittable) -> Color) {
+                         ray_color: fn(&Ray, &dyn Hittable, i32) -> Color) {
         let mut contents = String::with_capacity(2_000_000);
 
         contents.push_str("P3\n");
@@ -94,7 +97,7 @@ impl Camera {
                     let mut pixel_color = Color::new(0.0, 0.0, 0.0);
                     for _ in 0..self.samples_per_pixel {
                         let r = self.get_ray(i, j);
-                        pixel_color += ray_color(&r, world);
+                        pixel_color += ray_color(&r, world, self.max_depth);
                     }
 
                     let scale = 1.0 / self.samples_per_pixel as f64;
@@ -118,7 +121,7 @@ impl Camera {
                     let ray_direction = pixel_center - ray_origin;
                     let r = Ray::new(ray_origin, ray_direction);
 
-                    let pixel_color = Self::ray_color(&r, world);
+                    let pixel_color = Self::ray_color(&r, world, self.max_depth);
                     contents.push_str(&format!("{pixel_color}\n"));
                 }
             }
@@ -132,7 +135,7 @@ impl Camera {
         print!("\rDone.                 \n");
     }
 
-    pub(crate) fn ray_color(r: &Ray, world: &dyn Hittable) -> Color {
+    pub(crate) fn ray_color(r: &Ray, world: &dyn Hittable, _max_depth: i32) -> Color {
         let mut rec = HitRecord::default();
         if world.hit(r, Interval::new(0.0, f64::INFINITY), &mut rec) {
             return 0.5 * (rec.normal.unwrap() + Color::new(1.0, 1.0, 1.0));
@@ -156,11 +159,16 @@ impl Camera {
     // An algorithm that randomizes direction will produce surfaces that look matte.
     // The simplest diffuse material is one in which it has an equal chance of reflecting light
     // in any direction.
-    pub(crate) fn ray_color_diffuse(r: &Ray, world: &dyn Hittable) -> Color {
+    pub(crate) fn ray_color_diffuse(r: &Ray, world: &dyn Hittable, depth: i32) -> Color {
+        if depth <= 0 {
+            return Color::new(0.0, 0.0, 0.0);
+        }
+
         let mut rec = HitRecord::default();
         if world.hit(r, Interval::new(0.0, f64::INFINITY), &mut rec) {
             let direction = random_on_hemisphere(rec.normal.unwrap());
-            return 0.5 * Self::ray_color_diffuse(&Ray::new(rec.p.unwrap(), direction), world);
+            return 0.5 * Self::ray_color_diffuse(&Ray::new(rec.p.unwrap(), direction), world,
+                                                 depth-1);
         }
 
         let unit_direction = unit_vector(r.direction);
