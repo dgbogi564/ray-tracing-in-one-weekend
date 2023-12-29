@@ -9,9 +9,10 @@ macro_rules! random_double {
     }};
     ($min:expr, $max:expr) => {{
         use rand::{Rng, thread_rng};
-        let num : f64 = thread_rng().gen_range(min, max);
+        let num : f64 = thread_rng().gen_range($min..$max);
         num
-    }}
+    }};
 }
 
+use rand::Rng;
 pub(crate) use random_double;
