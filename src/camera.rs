@@ -165,7 +165,10 @@ impl Camera {
         }
 
         let mut rec = HitRecord::default();
-        if world.hit(r, Interval::new(0.0, f64::INFINITY), &mut rec) {
+
+        // 0.001 - fix shadow acne: bug associated with floating point rounding errors on object
+        // intersections
+        if world.hit(r, Interval::new(0.001, f64::INFINITY), &mut rec) {
             let direction = random_on_hemisphere(rec.normal.unwrap());
             return 0.5 * Self::ray_color_diffuse(&Ray::new(rec.p.unwrap(), direction), world,
                                                  depth-1);
