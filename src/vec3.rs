@@ -1,3 +1,5 @@
+use crate::utils::random_double;
+
 #[derive(Clone, Copy, Debug)]
 pub(crate) struct Vec3 {
     pub(crate) x: f64,
@@ -16,6 +18,16 @@ impl Vec3 {
     pub(crate) fn default() -> Self {
         Self { x: 0.0, y: 0.0, z: 0.0 }
     }
+
+    //
+    pub(crate) fn random(min: f64, max: f64) -> Self {
+        Self {
+            x: random_double!(min, max),
+            y: random_double!(min, max),
+            z: random_double!(min, max),
+        }
+    }
+
     pub(crate) fn length(&self) -> f64 {
         f64::sqrt(self.length_squared())
     }
@@ -33,6 +45,42 @@ pub(crate) fn unit_vector(v: Vec3) -> Vec3 {
     Vec3::new(v[0] / length,
               v[1] / length,
               v[2] / length)
+}
+
+// In order to make sure our randomized vector is on the surface of the hemisphere, we take
+// a naive approach via a rejection method: generate random vectors until they meet our criteria.
+// Our criteria is outlined as follows:
+//     1. Pick a random point in a unit cube where x, y, z all range from -1 to 1.
+//     2. Reject a point if it outside the unit sphere.
+fn random_in_unit_sphere() -> Vec3 {
+    loop {
+        let p = Vec3::random(-1.0, 1.0);
+        // formula of a sphere x^2 + y^2 + z^2 = r^2
+        // since sphere is assumed to be unit length, we check if it's less than 1
+        if p.length_squared() < 1.0 {
+            return p;
+        }
+    }
+}
+
+// There are many ways to generate a random vector on a hemisphere using the rejection method,
+// but for our purposes, we will go with the simplest:
+//     1. Generate a random vector inside of the unit sphere
+//     2. Normalize this vector
+//     3. Invert the normalized vector if it falls onto the wrong hemisphere
+pub(crate) fn random_unit_vector() -> Vec3 {
+    // normalizing vector makes x^2 + y^2 + z^2 = 1, a point on the surface of the sphere
+    unit_vector(random_in_unit_sphere())
+}
+
+// To determine if vector is in the correct hemisphere, we can compare against the surface normal
+pub(crate) fn random_on_hemisphere(normal : Vec3) -> Vec3 {
+    let on_unit_sphere = random_unit_vector();
+    if dot(on_unit_sphere, normal) > 0.0 { // In the same hemisphere as normal
+        on_unit_sphere
+    } else {
+        -on_unit_sphere
+    }
 }
 
 pub(crate) fn dot(lhs: Vec3, rhs: Vec3) -> f64 {

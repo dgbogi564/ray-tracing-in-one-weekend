@@ -6,7 +6,7 @@ use crate::hittable::{HitRecord, Hittable};
 use crate::interval::Interval;
 use crate::ray::Ray;
 use crate::utils::random_double;
-use crate::vec3::{Color, Point3, unit_vector, Vec3};
+use crate::vec3::{Color, Point3, random_on_hemisphere, unit_vector, Vec3};
 
 pub(crate) struct Camera {
     image_width: i32,
@@ -55,7 +55,8 @@ impl Camera {
         }
     }
 
-    pub(crate) fn render(&self, world: &dyn Hittable, file_path: &str, anti_aliasing: bool) {
+    pub(crate) fn render(&self, world: &dyn Hittable, file_path: &str, anti_aliasing: bool,
+                         ray_color: fn(&Ray, &dyn Hittable) -> Color) {
         let mut contents = String::with_capacity(2_000_000);
 
         contents.push_str("P3\n");
@@ -93,7 +94,7 @@ impl Camera {
                     let mut pixel_color = Color::new(0.0, 0.0, 0.0);
                     for _ in 0..self.samples_per_pixel {
                         let r = self.get_ray(i, j);
-                        pixel_color += Self::ray_color(&r, world);
+                        pixel_color += ray_color(&r, world);
                     }
 
                     let scale = 1.0 / self.samples_per_pixel as f64;
@@ -131,10 +132,35 @@ impl Camera {
         print!("\rDone.                 \n");
     }
 
-    fn ray_color(r: &Ray, world: &dyn Hittable) -> Color {
+    pub(crate) fn ray_color(r: &Ray, world: &dyn Hittable) -> Color {
         let mut rec = HitRecord::default();
         if world.hit(r, Interval::new(0.0, f64::INFINITY), &mut rec) {
             return 0.5 * (rec.normal.unwrap() + Color::new(1.0, 1.0, 1.0));
+        }
+
+        let unit_direction = unit_vector(r.direction);
+        let a = 0.5 * (unit_direction.y + 1.0);
+
+        (1.0 - a) * Color::new(1.0, 1.0, 1.0) + a * Color::new(0.6, 0.7, 1.0)
+    }
+
+    // Diffuse objects that don't emit their own light merely take on the color of their
+    // surroundings, but they do modulate with their own intrinsic color.
+    //
+    // Light that reflects off a diffuse surface has its direction randomized, so, if we send
+    // three rays into a crack between two diffuse surfaces they will each have different random
+    // behavior.
+    //
+    // They might also be absorbed rather than reflected.
+    //
+    // An algorithm that randomizes direction will produce surfaces that look matte.
+    // The simplest diffuse material is one in which it has an equal chance of reflecting light
+    // in any direction.
+    pub(crate) fn ray_color_diffuse(r: &Ray, world: &dyn Hittable) -> Color {
+        let mut rec = HitRecord::default();
+        if world.hit(r, Interval::new(0.0, f64::INFINITY), &mut rec) {
+            let direction = random_on_hemisphere(rec.normal.unwrap());
+            return 0.5 * Self::ray_color_diffuse(&Ray::new(rec.p.unwrap(), direction), world);
         }
 
         let unit_direction = unit_vector(r.direction);
