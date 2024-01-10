@@ -37,13 +37,20 @@ fn main() {
     world.add(Rc::new(Sphere::new(Point3::new(0.0, 0.0, -1.0), 0.5)));
     world.add(Rc::new(Sphere::new(Point3::new(0.0, -100.5, -1.0), 100.0)));
     let mut camera = camera::Camera::new(400, 16.0 / 9.0, 100, 0);
-    camera.render(&world, "out/camera.ppm", false, Camera::ray_color);
+    camera.render(&world, "out/camera.ppm", Camera::ray_color,
+                  false, false);
 
     // https://raytracing.github.io/books/RayTracingInOneWeekend.html#antialiasing
     camera.samples_per_pixel = 10;
-    camera.render(&world, "out/anti_aliasing.ppm", true, Camera::ray_color);
+    camera.render(&world, "out/anti_aliasing.ppm", Camera::ray_color,
+                  true, false);
 
     // https://raytracing.github.io/books/RayTracingInOneWeekend.html#diffusematerials
     camera.max_depth = 50;
-    camera.render(&world, "out/diffuse.ppm", true, Camera::ray_color_diffuse);
+    camera.render(&world, "out/diffuse.ppm", Camera::ray_color_diffuse,
+                  true, false);
+    camera.render(&world, "out/lambertian_diffuse.ppm", Camera::ray_color_lambertian_diffuse,
+                  true, false);
+    camera.render(&world, "out/gamma_diffuse.ppm", Camera::ray_color_lambertian_diffuse,
+                  true, true);
 }

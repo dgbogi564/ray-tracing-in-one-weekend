@@ -6,7 +6,7 @@ use crate::hittable::{HitRecord, Hittable};
 use crate::interval::Interval;
 use crate::ray::Ray;
 use crate::utils::random_double;
-use crate::vec3::{Color, Point3, random_on_hemisphere, unit_vector, Vec3};
+use crate::vec3::{Color, Point3, random_on_hemisphere, random_unit_vector, unit_vector, Vec3};
 
 pub(crate) struct Camera {
     image_width: i32,
@@ -22,7 +22,7 @@ pub(crate) struct Camera {
 
 impl Camera {
     pub(crate) fn new(image_width: i32, aspect_ratio: f64, samples_per_pixel: i32, max_depth: i32)
-        -> Self {
+                      -> Self {
         let image_height: i32 = max((image_width as f64 / aspect_ratio).floor() as i32, 1);
 
         let focal_length = 1.0;
@@ -58,8 +58,9 @@ impl Camera {
         }
     }
 
-    pub(crate) fn render(&self, world: &dyn Hittable, file_path: &str, anti_aliasing: bool,
-                         ray_color: fn(&Ray, &dyn Hittable, i32) -> Color) {
+    pub(crate) fn render(&self, world: &dyn Hittable, file_path: &str,
+                         ray_color: fn(&Ray, &dyn Hittable, i32) -> Color,
+                         anti_aliasing: bool, gamma_correction: bool) {
         let mut contents = String::with_capacity(2_000_000);
 
         contents.push_str("P3\n");
@@ -103,9 +104,19 @@ impl Camera {
                     let scale = 1.0 / self.samples_per_pixel as f64;
                     let intensity = Interval::new(0.000, 0.999);
 
-                    let r = intensity.clamp(pixel_color.x * scale);
-                    let g = intensity.clamp(pixel_color.y * scale);
-                    let b = intensity.clamp(pixel_color.z * scale);
+                    let mut r = pixel_color.x * scale;
+                    let mut g = pixel_color.y * scale;
+                    let mut b = pixel_color.z * scale;
+
+                    if gamma_correction {
+                        r = Camera::linear_to_gamma(r);
+                        g = Camera::linear_to_gamma(g);
+                        b = Camera::linear_to_gamma(b);
+                    }
+
+                    let r = intensity.clamp(r);
+                    let g = intensity.clamp(g);
+                    let b = intensity.clamp(b);
 
                     contents.push_str(&format!("{0}\n", Color::new(r, g, b)));
                 }
@@ -171,7 +182,48 @@ impl Camera {
         if world.hit(r, Interval::new(0.001, f64::INFINITY), &mut rec) {
             let direction = random_on_hemisphere(rec.normal.unwrap());
             return 0.5 * Self::ray_color_diffuse(&Ray::new(rec.p.unwrap(), direction), world,
-                                                 depth-1);
+                                                 depth - 1);
+        }
+
+        let unit_direction = unit_vector(r.direction);
+        let a = 0.5 * (unit_direction.y + 1.0);
+
+        (1.0 - a) * Color::new(1.0, 1.0, 1.0) + a * Color::new(0.6, 0.7, 1.0)
+    }
+
+    pub(crate) fn ray_color_lambertian_diffuse(r: &Ray, world: &dyn Hittable, depth: i32) -> Color {
+        if depth <= 0 {
+            return Color::new(0.0, 0.0, 0.0);
+        }
+
+        let mut rec = HitRecord::default();
+
+        // 0.001 - fix shadow acne: bug associated with floating point rounding errors on object
+        // intersections
+        if world.hit(r, Interval::new(0.001, f64::INFINITY), &mut rec) {
+            let direction = random_on_hemisphere(rec.normal.unwrap());
+
+            // Lambertian reflection
+            // Creates scatters via a random distribution of unit vectors proportional to cos
+            // (theta) where theta is the angle between the reflected ray and the surface normal.
+            //
+            // The intersection point, P, of a ray to the surface of the sphere has exactly two
+            // sides: inside and outside the sphere.
+            //
+            // We can create two unit spheres tangent to tha surface:
+            //    one sphere in the direction of the surface's normal (P + n)
+            //    and one vice versa (P - n)
+            //
+            // We want our reflections to reflect in the same direction as the ray's origin, so
+            // with our current implementation in mind, we'll only worry about the unit sphere in
+            // the direction of the surface normal.
+            //
+            // We then take a random point, S, on the unit radius of the selected sphere and send
+            // a ray originating from the contact point, P, to the generated point, S (this is
+            // the vector S - P).
+            let direction = rec.normal.unwrap() + random_unit_vector();
+            return 0.5 * Self::ray_color_diffuse(&Ray::new(rec.p.unwrap(), direction), world,
+                                                 depth - 1);
         }
 
         let unit_direction = unit_vector(r.direction);
@@ -197,5 +249,9 @@ impl Camera {
         let py = -0.5 + random_double!();
 
         (px * self.pixel_delta_u) + (py * self.pixel_delta_v)
+    }
+
+    fn linear_to_gamma(linear_component: f64) -> f64 {
+        f64::sqrt(linear_component)
     }
 }
