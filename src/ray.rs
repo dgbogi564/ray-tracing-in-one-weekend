@@ -10,6 +10,9 @@ impl Ray {
     pub(crate) fn new(origin: Point3, direction: Vec3) -> Self {
         Self { origin, direction }
     }
+    pub(crate) fn default() -> Self {
+        Self { origin: Point3::default(), direction : Vec3::default() }
+    }
 
     /// P(t) = A + tb.
     /// - P is a 3D position along a line in 3D.

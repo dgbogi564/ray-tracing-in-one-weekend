@@ -35,6 +35,11 @@ impl Vec3 {
     pub(crate) fn length_squared(&self) -> f64 {
         self[0].powi(2) + self[1].powi(2) + self[2].powi(2)
     }
+
+    pub(crate) fn near_zero(&self) -> bool {
+        let s = 1e-8;
+        (self.x.abs() < s) && (self.y.abs() < s) && (self.z.abs() < s)
+    }
 }
 
 
@@ -81,6 +86,10 @@ pub(crate) fn random_on_hemisphere(normal : Vec3) -> Vec3 {
     } else {
         -on_unit_sphere
     }
+}
+
+pub(crate) fn reflect(v : Vec3, n: Vec3) -> Vec3 {
+    v - 2.0 * dot(v, n) * n
 }
 
 pub(crate) fn dot(lhs: Vec3, rhs: Vec3) -> f64 {

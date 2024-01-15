@@ -34,8 +34,8 @@ pub(crate) fn render(file_path: &str) {
 
     // World
     let mut world = HittableList::new();
-    world.add(Rc::new(Sphere::new(Point3::new(0.0, 0.0, -1.0), 0.5)));
-    world.add(Rc::new(Sphere::new(Point3::new(0.0, -100.5, -1.0), 100.0)));
+    world.add(Rc::new(Sphere::new(Point3::new(0.0, 0.0, -1.0), 0.5, None)));
+    world.add(Rc::new(Sphere::new(Point3::new(0.0, -100.5, -1.0), 100.0, None)));
 
     // Camera
 

@@ -192,38 +192,48 @@ impl Camera {
     }
 
     pub(crate) fn ray_color_lambertian_diffuse(r: &Ray, world: &dyn Hittable, depth: i32) -> Color {
+        // If we've exceeded the ray bounce limit, no more light is gathered.
         if depth <= 0 {
             return Color::new(0.0, 0.0, 0.0);
         }
 
         let mut rec = HitRecord::default();
 
+
+        // Lambertian reflection
+        // Creates scatters via a random distribution of unit vectors proportional to cos
+        // (theta) where theta is the angle between the reflected ray and the surface normal.
+        //
+        // The intersection point, P, of a ray to the surface of the sphere has exactly two
+        // sides: inside and outside the sphere.
+        //
+        // We can create two unit spheres tangent to tha surface:
+        //    one sphere in the direction of the surface's normal (P + n)
+        //    and one vice versa (P - n)
+        //
+        // We want our reflections to reflect in the same direction as the ray's origin, so
+        // with our current implementation in mind, we'll only worry about the unit sphere in
+        // the direction of the surface normal.
+        //
+        // We then take a random point, S, on the unit radius of the selected sphere and send
+        // a ray originating from the contact point, P, to the generated point, S (this is
+        // the vector S - P).
+        //
+        // let direction = rec.normal.unwrap() + random_unit_vector();
+        // return 0.5 * Self::ray_color_diffuse(&Ray::new(rec.p.unwrap(), direction), world,
+        //                                      depth - 1);
+
         // 0.001 - fix shadow acne: bug associated with floating point rounding errors on object
         // intersections
         if world.hit(r, Interval::new(0.001, f64::INFINITY), &mut rec) {
-            let direction = random_on_hemisphere(rec.normal.unwrap());
-
-            // Lambertian reflection
-            // Creates scatters via a random distribution of unit vectors proportional to cos
-            // (theta) where theta is the angle between the reflected ray and the surface normal.
-            //
-            // The intersection point, P, of a ray to the surface of the sphere has exactly two
-            // sides: inside and outside the sphere.
-            //
-            // We can create two unit spheres tangent to tha surface:
-            //    one sphere in the direction of the surface's normal (P + n)
-            //    and one vice versa (P - n)
-            //
-            // We want our reflections to reflect in the same direction as the ray's origin, so
-            // with our current implementation in mind, we'll only worry about the unit sphere in
-            // the direction of the surface normal.
-            //
-            // We then take a random point, S, on the unit radius of the selected sphere and send
-            // a ray originating from the contact point, P, to the generated point, S (this is
-            // the vector S - P).
-            let direction = rec.normal.unwrap() + random_unit_vector();
-            return 0.5 * Self::ray_color_diffuse(&Ray::new(rec.p.unwrap(), direction), world,
-                                                 depth - 1);
+            let mut scattered = Ray::default();
+            let mut attenuation = Color::default();
+            if !rec.mat.is_none() && rec.mat.as_ref().unwrap().scatter(r, &rec, &mut attenuation,
+                                                                       &mut scattered) {
+                return attenuation * Self::ray_color_lambertian_diffuse(&scattered, world,
+                                                                        depth - 1);
+            }
+            return Color::new(0.0, 0.0, 0.0);
         }
 
         let unit_direction = unit_vector(r.direction);

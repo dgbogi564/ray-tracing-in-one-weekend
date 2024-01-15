@@ -1,21 +1,24 @@
 use std::rc::Rc;
 use crate::interval::Interval;
+use crate::material::Material;
 use crate::ray::Ray;
 use crate::vec3::{dot, Point3, Vec3};
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub(crate) struct HitRecord {
     pub(crate) p: Option<Point3>,
     pub(crate) normal: Option<Vec3>,
+    pub(crate) mat : Option<Rc<dyn Material>>,
     pub(crate) t: f64,
     pub(crate) front_face: Option<bool>,
 }
 
 impl HitRecord {
-    pub(crate) fn new(p: Point3, normal: Vec3, t: f64, front_face: bool) -> HitRecord {
+    pub(crate) fn new(p: Point3, normal: Vec3, mat: Rc<dyn Material>, t: f64, front_face: bool) -> HitRecord {
         HitRecord {
             p: Some(p),
             normal: Some(normal),
+            mat: Some(mat),
             t,
             front_face: Some(front_face),
         }
@@ -26,6 +29,7 @@ impl HitRecord {
             p: None,
             normal: None,
             t: 0.0,
+            mat: None,
             front_face: None,
         }
     }
@@ -52,7 +56,6 @@ impl HitRecord {
 }
 
 pub(crate) trait Hittable {
-    fn default() -> Self where Self : Sized;
     fn hit(&self, r: &Ray, ray_t : Interval, rec: &mut HitRecord) -> bool;
 }
 
@@ -69,11 +72,6 @@ impl HittableList {
     }
 }
 impl Hittable for HittableList {
-
-    fn default() -> Self where Self: Sized {
-        HittableList { objects: Vec::new() }
-    }
-
     fn hit(&self, r: &Ray, ray_t : Interval, rec: &mut HitRecord) -> bool {
         let mut hit_anything = false;
         let mut closest_so_far = ray_t.max;
